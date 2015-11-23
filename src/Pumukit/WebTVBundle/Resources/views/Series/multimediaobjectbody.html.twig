@@ -63,6 +63,7 @@
          <div class="subtitle">{{ mm.getSubtitle() }}</div>	
          {% endif %}
          <div class="objects">
+           {% set show_viewed = true %}
            <!-- MATTERHORN -->
            {% if mm.getProperty('opencast') is not empty %}
            <div id="material" class="file matterhorn">
@@ -74,8 +75,11 @@
              {% endspaceless %}</a>
              &nbsp;|&nbsp;&nbsp;<span class="language">{{ (mm.getProperty('opencastlanguage')?(mm.getProperty('opencastlanguage')|lower):'en')|language_name }}</span>
              &nbsp;|&nbsp; {{ mm.getDuration()|duration_minutes_seconds }}
+             {% if show_viewed %}
 	         &nbsp;|&nbsp; {% trans %}Viewed{% endtrans %}: <span class="numView">{{ mm.getNumview() }}</span>
              {% if (mm.getNumview() == 1) %}{% trans %}time{% endtrans %}{% else %}{% trans %}times{% endtrans %}{% endif %}
+             {% set show_viewed = false %}
+             {% endif %}
            </div>
            {% else %}
            <!-- TRACKS -->
@@ -102,10 +106,13 @@
                      {% endspaceless %}</a>
                    &nbsp;|&nbsp;&nbsp;<span class="language">{{ track.getLanguage()|language_name}}</span>
                    &nbsp;({{ track.getDuration()|duration_minutes_seconds }})
+                   {% if show_viewed %}
                    &nbsp;|&nbsp; {% trans %}Viewed{% endtrans %}: <span class="numView">{{ mm.getNumview() }}</span>
                    {% transchoice mm.getNumview() %}
                        {0}times|{1}time|]1,Inf]times
                    {% endtranschoice %}
+                   {% set show_viewed = false %}
+                   {% endif %}
                </div>
            {% endfor %}
            {% endif %}
