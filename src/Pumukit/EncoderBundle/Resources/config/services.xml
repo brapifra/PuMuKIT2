@@ -49,6 +49,12 @@
             <argument type="service" id="service_container" />
             <tag name="kernel.event_listener" event="track.delete" method="postTrackRemove"/>
         </service>
+
+        <service id="pumukitencoder.twig_extension" class="Pumukit\EncoderBundle\Twig\PumukitEncoderExtension">
+          <tag name="twig.extension"/>
+          <argument type="service" id="doctrine_mongodb.odm.document_manager" />
+          <argument type="service" id="translator" />
+        </service>
     </services>
 
 </container>
