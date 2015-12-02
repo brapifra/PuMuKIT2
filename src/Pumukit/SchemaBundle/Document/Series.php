@@ -250,11 +250,15 @@ class Series
    */
   public function getMultimediaObjects($withPrototype=false, $rank=1)
   {
-      if ($withPrototype) {
+      if (!$withPrototype) {
           $prototypeStatus = MultimediaObject::STATUS_PROTOTYPE;
-          $this->multimedia_objects = $this->multimedia_objects->filter(function ($multimediaObject) use ($prototypeStatus) {
-              return ($multimediaObject->getStatus() !== $prototypeStatus);
-            });
+          $multimediaObjects = new ArrayCollection();
+          foreach ($this->multimedia_objects as $multimediaObject) {
+              if ($multimediaObject->getStatus() !== $prototypeStatus) {
+                  $multimediaObjects->add($multimediaObject);
+              }
+          }
+          return $multimediaObjects;
       }
       // TODO sort by rank
       /* if ($rank === 1) { */
