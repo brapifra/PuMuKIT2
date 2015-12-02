@@ -85,6 +85,7 @@ class FactoryService
         }
 
         $mm->setSeries($series);
+        $series->addMultimediaObject($mm);
 
         return $mm;
     }

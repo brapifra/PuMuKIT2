@@ -33,7 +33,7 @@ class Series
   /**
    * @var ArrayCollection $multimedia_objects
    *
-   * @MongoDB\ReferenceMany(targetDocument="MultimediaObject", mappedBy="series", strategy="set", repositoryMethod="findWithoutPrototype", sort={"rank"=1}, simple=true, orphanRemoval=true, cascade={"persist"})
+   * @MongoDB\ReferenceMany(targetDocument="MultimediaObject", mappedBy="series", sort={"rank"=1}, simple=true, orphanRemoval=true, cascade={"persist"})
    */
   private $multimedia_objects;
 
@@ -244,11 +244,26 @@ class Series
   /**
    * Get multimedia_objects
    *
+   * @param boolean $withPrototype
+   * @param integer $rank
    * @return ArrayCollection
    */
-  public function getMultimediaObjects()
+  public function getMultimediaObjects($withPrototype=false, $rank=1)
   {
-    return $this->multimedia_objects;
+      if ($withPrototype) {
+          $prototypeStatus = MultimediaObject::STATUS_PROTOTYPE;
+          $this->multimedia_objects = $this->multimedia_objects->filter(function ($multimediaObject) use ($prototypeStatus) {
+              return ($multimediaObject->getStatus() !== $prototypeStatus);
+            });
+      }
+      // TODO sort by rank
+      /* if ($rank === 1) { */
+      /*     usort($this->multimedia_objects->toArray(), array($this, "upOrderRank")); */
+      /* } else { */
+      /*     usort($this->multimedia_objects->toArray(), array($this, "downOrderRank")); */
+      /* } */
+
+      return $this->multimedia_objects;
   }
 
   /**
@@ -736,13 +751,15 @@ class Series
    * Get multimediaobjects with a tag
    *
    * @param Tag $tag
+   * @param boolean $withPrototype
+   * @param integer $rank
    * @return ArrayCollection
    */
-  public function getMultimediaObjectsWithTag(Tag $tag)
+  public function getMultimediaObjectsWithTag(Tag $tag, $withPrototype=false, $rank=1)
   {
     $r = array();
 
-    foreach ($this->multimedia_objects as $mmo) {
+    foreach ($this->getMultimediaObjects($withPrototype, $rank) as $mmo) {
       if ($mmo->containsTag($tag)) {
         $r[] = $mmo;
       }
@@ -755,11 +772,13 @@ class Series
    * Get one multimedia object with tag
    *
    * @param Tag $tag
+   * @param boolean $withPrototype
+   * @param integer $rank
    * @return MultimediaObject|null
    */
-  public function getMultimediaObjectWithTag(Tag $tag)
+  public function getMultimediaObjectWithTag(Tag $tag, $withPrototype=false, $rank=1)
   {
-    foreach ($this->multimedia_objects as $mmo) {
+    foreach ($this->getMultimediaObjects($withPrototype, $rank) as $mmo) {
       //if ($mmo->tags->contains($tag)) {
       //FIXME no pasa el test phpunit cuando se llama desde seriestest
       if ($mmo->containsTag($tag)) {
@@ -774,12 +793,14 @@ class Series
    * Get multimediaobjects with all tags
    *
    * @param array $tags
+   * @param boolean $withPrototype
+   * @param integer $rank
    * @return ArrayCollection
    */
-  public function getMultimediaObjectsWithAllTags(array $tags)
+  public function getMultimediaObjectsWithAllTags(array $tags, $withPrototype=false, $rank=1)
   {
     $r = array();
-    foreach ($this->multimedia_objects as $mmo) {
+    foreach ($this->getMultimediaObjects($withPrototype, $rank) as $mmo) {
       if ($mmo->containsAllTags($tags)) {
         $r[] = $mmo;
       }
@@ -792,11 +813,13 @@ class Series
    * Get multimediaobject with all tags
    *
    * @param array $tags
+   * @param boolean $withPrototype
+   * @param integer $rank
    * @return multimedia_object|null
    */
-  public function getMultimediaObjectWithAllTags(array $tags)
+  public function getMultimediaObjectWithAllTags(array $tags, $withPrototype=false, $rank=1)
   {
-    foreach ($this->multimedia_objects as $mmo) {
+    foreach ($this->getMultimediaObjects($withPrototype, $rank) as $mmo) {
       if ($mmo->containsAllTags($tags)) {
         return $mmo;
       }
@@ -809,13 +832,15 @@ class Series
    * Get multimediaobjects with any tag
    *
    * @param array $tags
+   * @param boolean $withPrototype
+   * @param integer $rank
    * @return ArrayCollection
    */
-  public function getMultimediaObjectsWithAnyTag(array $tags)
+  public function getMultimediaObjectsWithAnyTag(array $tags, $withPrototype=false, $rank=1)
   {
     $r = array();
 
-    foreach ($this->multimedia_objects as $mmo) {
+    foreach ($this->getMultimediaObjects($withPrototype, $rank) as $mmo) {
       if ($mmo->containsAnyTag($tags)) {
         $r[] = $mmo;
       }
@@ -828,11 +853,13 @@ class Series
    * Get multimediaobject with any tag
    *
    * @param array $tags
+   * @param boolean $withPrototype
+   * @param integer $rank
    * @return MultimediaObject|null
    */
-  public function getMultimediaObjectWithAnyTag(array $tags)
+  public function getMultimediaObjectWithAnyTag(array $tags, $withPrototype=false, $rank=1)
   {
-    foreach ($this->multimedia_objects as $mmo) {
+    foreach ($this->getMultimediaObjects($withPrototype, $rank) as $mmo) {
       if ($mmo->containsAnyTag($tags)) {
         return $mmo;
       }
@@ -848,17 +875,21 @@ class Series
    * @param array $all_tags
    * @param array $not_any_tags
    * @param array $not_all_tags
+   * @param boolean $withPrototype
+   * @param integer $rank
    * @return ArrayCollection
    */
   public function getFilteredMultimediaObjectsWithTags(
    array $any_tags = array(),
    array $all_tags = array(),
    array $not_any_tags = array(),
-   array $not_all_tags = array())
+   array $not_all_tags = array(),
+   $withPrototype=false,
+   $rank=1)
   {
     $r = array();
 
-    foreach ($this->multimedia_objects as $mmo) {
+    foreach ($this->getMultimediaObjects($withPrototype, $rank) as $mmo) {
       if ($any_tags && !$mmo->containsAnyTag($any_tags)) {
         continue;
       }
@@ -1078,4 +1109,19 @@ class Series
       $this->properties[$key] = $value;
   }
 
+  /**
+   * Up order by rank
+   */
+  private function upOrderRank($mm1, $mm2)
+  {
+      return (($mm1->getRank() > $mm2->getRank()) ? 1 : -1);
+  }
+
+  /**
+   * Down order by rank
+   */
+  private function downOrderRank($mm1, $mm2)
+  {
+      return (($mm1->getRank() < $mm2->getRank()) ? 1 : -1);
+  }
 }
